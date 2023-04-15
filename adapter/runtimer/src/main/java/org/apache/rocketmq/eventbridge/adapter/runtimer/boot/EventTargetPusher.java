@@ -27,9 +27,12 @@ import org.apache.rocketmq.eventbridge.adapter.runtimer.config.RuntimerConfigDef
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * event target push to sink task
@@ -42,14 +45,26 @@ public class EventTargetPusher extends ServiceThread{
 
     private final CirculatorContext circulatorContext;
 
+    private final Object resultLock;
+    private final List<ConnectRecord> changeRecordBuffer;
+    private final int maxBufferSize;
+
+    private AtomicReference<RuntimeException> executionException = new AtomicReference<>();
+
+
     public EventTargetPusher(CirculatorContext circulatorContext) {
+        resultLock = new Object();
         this.circulatorContext = circulatorContext;
+        changeRecordBuffer = new ArrayList<>();
+        this.maxBufferSize = 100;
     }
 
     @Override
     public void run() {
         while (!stopped) {
             ConnectRecord targetRecord = circulatorContext.takeTargetMap();
+
+            processRecord(targetRecord);
             if (Objects.isNull(targetRecord)) {
                 logger.info("current target pusher is empty");
                 this.waitForRunning(1000);
@@ -59,9 +74,12 @@ public class EventTargetPusher extends ServiceThread{
                 logger.debug("start push content by pusher - {}", JSON.toJSONString(targetRecord));
             }
 
+            //线程池定时执行批量递送的任务
+            List<ConnectRecord> result =  retrieveChanges();
             ExecutorService executorService = circulatorContext.getExecutorService(targetRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS));
             executorService.execute(() -> {
                 try {
+
                     String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
                     SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
                     sinkTask.put(Lists.newArrayList(targetRecord));
@@ -77,5 +95,43 @@ public class EventTargetPusher extends ServiceThread{
         return EventTargetPusher.class.getSimpleName();
     }
 
+    private void processRecord(ConnectRecord change) {
+        synchronized (resultLock) {
+            // wait if the buffer is full
+            if (changeRecordBuffer.size() >= maxBufferSize) {
+                try {
+                    resultLock.wait();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            } else {
+                changeRecordBuffer.add(change);
+            }
+        }
+    }
+
+    public List<ConnectRecord> retrieveChanges() {
+        synchronized (resultLock) {
+            if (isStopped() && executionException.get() == null) {
+                if (changeRecordBuffer.isEmpty()) {
+                    return new ArrayList<>();
+                } else {
+                    final List<ConnectRecord> change = new ArrayList<>(changeRecordBuffer);
+                    changeRecordBuffer.clear();
+                    resultLock.notify();
+                    return change;
+                }
+            }
+            else if (!isStopped() && !changeRecordBuffer.isEmpty()) {
+                final List<ConnectRecord> change = new ArrayList<>(changeRecordBuffer);
+                changeRecordBuffer.clear();
+                return change;
+            }
+            // no results can be returned anymore
+            else {
+                return new ArrayList<>();
+            }
+        }
+    }
 
 }
