@@ -51,7 +51,8 @@ public class EventTargetPusher extends ServiceThread{
     private final List<ConnectRecord> changeRecordBuffer;
     private final int maxBufferSize;
 
-    private AtomicReference<RuntimeException> executionException = new AtomicReference<>();
+    private CompletableFuture<String> taskExecutionResultFuture;
+    private AtomicReference<EventBridgeException> executionException = new AtomicReference<>();
 
 
     public EventTargetPusher(CirculatorContext circulatorContext) {
@@ -79,8 +80,9 @@ public class EventTargetPusher extends ServiceThread{
             //线程池定时执行批量递送的任务,对每个不同的topic而言
             List<ConnectRecord> result =  retrieveChanges();
             String sinkTaskClass = targetRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS);
-            //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture非阻塞的方式投递
-            CompletableFuture.completedFuture(sinkTaskClass)
+            //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture异步非阻塞的方式投递
+            //CompletableFuture中以async结尾的方法将会在一个新的线程中执行组合操作
+            taskExecutionResultFuture = CompletableFuture.completedFuture(sinkTaskClass)
                     .thenCompose(sink -> CompletableFuture.supplyAsync( () -> {
                         String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
                         SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
@@ -136,9 +138,25 @@ public class EventTargetPusher extends ServiceThread{
             }
             // no results can be returned anymore
             else {
-                return new ArrayList<>();
+                return handleMissingResult();
             }
         }
+    }
+
+    private <T> List<ConnectRecord> handleMissingResult() {
+
+        // check if the monitoring thread is still there
+        // we need to wait until we know what is going on
+        if (!taskExecutionResultFuture.isDone()) {
+            return new ArrayList<>();
+        }
+
+        if (executionException.get() != null) {
+            throw executionException.get();
+        }
+
+        // we assume that a task finished
+        return changeRecordBuffer;
     }
 
 }
