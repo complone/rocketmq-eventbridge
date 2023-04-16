@@ -77,7 +77,7 @@ public class EventTargetPusher extends ServiceThread{
                 logger.debug("start push content by pusher - {}", JSON.toJSONString(targetRecord));
             }
 
-            //线程池定时执行批量递送的任务,对每个不同的topic而言
+            //以异步非阻塞的方式执行批量递送任务
             List<ConnectRecord> result =  retrieveChanges();
             List<CompletableFuture<String>> completableFutures = Lists.newArrayList();
             result.forEach(connectRecord -> {
