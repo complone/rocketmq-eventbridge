@@ -143,6 +143,7 @@ public class EventTargetPusher extends ServiceThread{
         }
     }
 
+    //异步的方式提交到sink端存在延时，需要将taskExecutionResultFuture的信息做实时判断
     private <T> List<ConnectRecord> handleMissingResult() {
 
         // check if the monitoring thread is still there
