@@ -79,23 +79,35 @@ public class EventTargetPusher extends ServiceThread{
 
             //线程池定时执行批量递送的任务,对每个不同的topic而言
             List<ConnectRecord> result =  retrieveChanges();
-            String sinkTaskClass = targetRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS);
-            //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture异步非阻塞的方式投递
-            //CompletableFuture中以async结尾的方法将会在一个新的线程中执行组合操作
-            taskExecutionResultFuture = CompletableFuture.completedFuture(sinkTaskClass)
-                    .thenCompose(sink -> CompletableFuture.supplyAsync( () -> {
-                        String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
-                        SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
-                        sinkTask.put(Lists.newArrayList(targetRecord));
-                        return sinkTaskClass;
-                    }))
-                    .whenComplete((unused, throwable) -> {
-                        if (throwable != null) {
-                            executionException.compareAndSet(
-                                    null,
-                                    new EventBridgeException("Error sink Task.", throwable));
-                        }
-                    });
+            List<CompletableFuture<String>> completableFutures = Lists.newArrayList();
+            result.forEach(connectRecord -> {
+                String sinkTaskClass = connectRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS);
+                //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture异步非阻塞的方式投递
+                //CompletableFuture中以async结尾的方法将会在一个新的线程中执行组合操作
+                taskExecutionResultFuture = CompletableFuture.completedFuture(sinkTaskClass)
+                        .thenCompose(sink -> CompletableFuture.supplyAsync( () -> {
+                            String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
+                            SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
+                            sinkTask.put(Lists.newArrayList(targetRecord));
+                            return sinkTaskClass;
+                        }))
+                        .whenComplete((unused, throwable) -> {
+                            if (throwable != null) {
+                                executionException.compareAndSet(
+                                        null,
+                                        new EventBridgeException("Error sink Task.", throwable));
+                            }
+                        });
+                completableFutures.add(taskExecutionResultFuture);
+            });
+            try{
+                CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[result.size()])).get();
+                // 是否需要在刷盘的时候通知到一个单独的BlockingQueue， BlockingQueue是否会膨胀
+                // circulatorContext.offerTargetTaskQueue(result);
+                logger.info("offer target task queues succeed, transforms - {}", JSON.toJSONString(result));
+            }catch (Exception exception){
+                logger.error("transfer event record failed, stackTrace-", exception);
+            }
         }
     }
 
