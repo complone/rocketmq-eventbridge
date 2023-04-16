@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * event target push to sink task
@@ -51,7 +52,7 @@ public class EventTargetPusher extends ServiceThread{
     private final List<ConnectRecord> changeRecordBuffer;
     private final int maxBufferSize;
 
-    private CompletableFuture<String> taskExecutionResultFuture;
+    private List<CompletableFuture<String>> completableFutures;
     private AtomicReference<EventBridgeException> executionException = new AtomicReference<>();
 
 
@@ -60,6 +61,7 @@ public class EventTargetPusher extends ServiceThread{
         this.circulatorContext = circulatorContext;
         changeRecordBuffer = new ArrayList<>();
         this.maxBufferSize = 100;
+        this.completableFutures = Lists.newArrayList();
     }
 
     @Override
@@ -84,7 +86,7 @@ public class EventTargetPusher extends ServiceThread{
                 String sinkTaskClass = connectRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS);
                 //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture异步非阻塞的方式投递
                 //CompletableFuture中以async结尾的方法将会在一个新的线程中执行组合操作
-                taskExecutionResultFuture = CompletableFuture.completedFuture(sinkTaskClass)
+                CompletableFuture<String> taskExecutionResultFuture = CompletableFuture.completedFuture(sinkTaskClass)
                         .thenCompose(sink -> CompletableFuture.supplyAsync( () -> {
                             String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
                             SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
@@ -160,7 +162,8 @@ public class EventTargetPusher extends ServiceThread{
 
         // check if the monitoring thread is still there
         // we need to wait until we know what is going on
-        if (!taskExecutionResultFuture.isDone()) {
+        completableFutures = completableFutures.stream().filter( x -> x.isDone()).collect(Collectors.toList());
+        if (completableFutures.size() < maxBufferSize) {
             return new ArrayList<>();
         }
 
