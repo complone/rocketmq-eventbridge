@@ -24,6 +24,7 @@ import io.openmessaging.connector.api.data.ConnectRecord;
 import org.apache.rocketmq.eventbridge.adapter.runtimer.boot.listener.CirculatorContext;
 import org.apache.rocketmq.eventbridge.adapter.runtimer.common.ServiceThread;
 import org.apache.rocketmq.eventbridge.adapter.runtimer.config.RuntimerConfigDefine;
+import org.apache.rocketmq.eventbridge.exception.EventBridgeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -74,19 +76,24 @@ public class EventTargetPusher extends ServiceThread{
                 logger.debug("start push content by pusher - {}", JSON.toJSONString(targetRecord));
             }
 
-            //线程池定时执行批量递送的任务
+            //线程池定时执行批量递送的任务,对每个不同的topic而言
             List<ConnectRecord> result =  retrieveChanges();
-            ExecutorService executorService = circulatorContext.getExecutorService(targetRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS));
-            executorService.execute(() -> {
-                try {
-
-                    String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
-                    SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
-                    sinkTask.put(Lists.newArrayList(targetRecord));
-                }catch (Exception exception){
-                    logger.error(getServiceName() + " push target exception, record - " + targetRecord + " , stackTrace-", exception);
-                }
-            });
+            String sinkTaskClass = targetRecord.getExtensions().getString(RuntimerConfigDefine.TASK_CLASS);
+            //一个sinkTaskClass用一个线程池, 太耗费资源了, 用CompletedFuture非阻塞的方式投递
+            CompletableFuture.completedFuture(sinkTaskClass)
+                    .thenCompose(sink -> CompletableFuture.supplyAsync( () -> {
+                        String runnerName = targetRecord.getExtensions().getString(RuntimerConfigDefine.RUNNER_NAME);
+                        SinkTask sinkTask = circulatorContext.getPusherTaskMap().get(runnerName);;
+                        sinkTask.put(Lists.newArrayList(targetRecord));
+                        return sinkTaskClass;
+                    }))
+                    .whenComplete((unused, throwable) -> {
+                        if (throwable != null) {
+                            executionException.compareAndSet(
+                                    null,
+                                    new EventBridgeException("Error sink Task.", throwable));
+                        }
+                    });
         }
     }
 
