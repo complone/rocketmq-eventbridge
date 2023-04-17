@@ -27,19 +27,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
+
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
+
 import org.apache.rocketmq.eventbridge.exception.EventBridgeException;
 import org.apache.rocketmq.eventbridge.exception.code.DefaultErrorCode;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
+import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.springframework.stereotype.Service;
 
@@ -126,8 +128,8 @@ public class RocketMQMetaService {
             TopicStatsTable topicStatsTable = defaultMQAdminExt.examineTopicStats(topic);
             //获取每个队列的
             ConsumeStats consumeStats = defaultMQAdminExt.examineConsumeStats("consumerGroup");
-            HashMap<MessageQueue, OffsetWrapper> offsetWrapperTable = consumeStats.getOffsetTable();
-            HashMap<MessageQueue, TopicOffset> offsetTable =  topicStatsTable.getOffsetTable();
+            Map<MessageQueue, OffsetWrapper> offsetWrapperTable = consumeStats.getOffsetTable();
+            Map<MessageQueue, TopicOffset> offsetTable =  topicStatsTable.getOffsetTable();
             for (MessageQueue messageQueue : messageQueueList) {
                 TopicOffset topicOffset = offsetTable.get(messageQueue);
                 OffsetWrapper offsetWrapper = offsetWrapperTable.get(messageQueue);
