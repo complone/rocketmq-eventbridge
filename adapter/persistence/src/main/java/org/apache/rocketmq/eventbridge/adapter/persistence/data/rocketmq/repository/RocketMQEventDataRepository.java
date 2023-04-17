@@ -20,8 +20,11 @@ package org.apache.rocketmq.eventbridge.adapter.persistence.data.rocketmq.reposi
 import com.google.gson.Gson;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.eventbridge.adapter.persistence.data.mybatis.dataobject.EventTopicDO;
 import org.apache.rocketmq.eventbridge.adapter.persistence.data.mybatis.mapper.EventTopicMapper;
 import org.apache.rocketmq.eventbridge.adapter.persistence.rpc.EventDataOnRocketMQConnectAPI;
@@ -34,6 +37,10 @@ import org.apache.rocketmq.eventbridge.exception.EventBridgeException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Repository
 @Slf4j
@@ -101,6 +108,32 @@ public class RocketMQEventDataRepository implements EventDataRepository {
                 .getDefaultDataPersistentClusterName());
         }
         return topicName;
+    }
+
+    /**
+     * Rocketmq消息消费算法数据准备
+     * @param accountId
+     * @param eventBusName
+     * @return
+     * @throws MQClientException
+     */
+    public Map<Integer, Pair<Long, Long>> fetchTopicStats(String accountId, String eventBusName)  {
+        Map<Integer, Pair<Long, Long>> calcuteConsumerLag = new HashMap<>();
+        String topicName = null;
+        EventTopicDO eventTopicDO = eventTopicMapper.getTopic(accountId, eventBusName);
+        if (eventTopicDO != null) {
+            topicName = eventTopicDO.getName();
+        } else {
+            topicName = eventDataOnRocketMQConnectAPI.buildTopicName(accountId, eventBusName);
+            List<MessageQueue> messageQueueList = null;
+            try {
+                messageQueueList = producer.fetchPublishMessageQueues(topicName);
+            } catch (MQClientException e) {
+                e.printStackTrace();
+            }
+            calcuteConsumerLag =  rocketMQMetaService.fetchPartitionInfo(topicName, messageQueueList);
+        }
+        return calcuteConsumerLag;
     }
 
 }
