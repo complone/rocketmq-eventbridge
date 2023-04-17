@@ -17,8 +17,12 @@
 
 package org.apache.rocketmq.eventbridge.domain.repository;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.rocketmq.eventbridge.domain.model.data.PutEventCallback;
 import org.apache.rocketmq.eventbridge.event.EventBridgeEvent;
+import org.apache.rocketmq.common.*;
+
+import java.util.Map;
 
 public interface EventDataRepository {
 
@@ -51,5 +55,15 @@ public interface EventDataRepository {
      * @return
      */
     String getEventBusPersistentContext(String accountId, String eventBusName);
+
+
+    /**
+     *
+     * @param accountId
+     * @param eventBusName
+     * @return
+     * @throws MQClientException
+     */
+    public Map<Integer, Pair<Long, Long>> fetchTopicStats(String accountId, String eventBusName);
 
 }

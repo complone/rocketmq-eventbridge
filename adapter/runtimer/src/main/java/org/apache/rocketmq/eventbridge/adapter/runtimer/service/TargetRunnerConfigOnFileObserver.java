@@ -82,6 +82,7 @@ public class TargetRunnerConfigOnFileObserver extends AbstractTargetRunnerConfig
         }
     }
 
+    //添加上游投递的监听器
     public void addListen(String pathName, TargetRunnerConfigOnFileObserver pusherConfigOnFileService) {
         log.info("Watching task file changing:{}", pathName);
         int index = pathName.lastIndexOf("/");
@@ -99,6 +100,7 @@ public class TargetRunnerConfigOnFileObserver extends AbstractTargetRunnerConfig
                     if (watchKey != null && !watchKey.pollEvents()
                         .isEmpty()) {
                         log.info("Watched the file changed events.");
+                        //判断target-runner.json是否有存在更改
                         pusherConfigOnFileService.diff();
                     }
                     watchKey.reset();
@@ -139,7 +141,7 @@ public class TargetRunnerConfigOnFileObserver extends AbstractTargetRunnerConfig
     }
 
     private String getConfigFilePath() {
-        return this.getClass().getClassLoader().getResource(DEFAULT_TARGET_RUNNER_CONFIG_FILE_NAME).getPath();
+        return "F:\\gitrepo\\rocketmq-eventbridge\\adapter\\runtimer\\src\\main\\resources\\target-runner.json";
     }
 
 }
