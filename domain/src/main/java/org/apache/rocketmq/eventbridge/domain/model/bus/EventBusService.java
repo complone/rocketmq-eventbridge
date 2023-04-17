@@ -16,7 +16,11 @@
  */
 package org.apache.rocketmq.eventbridge.domain.model.bus;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.rocketmq.eventbridge.domain.common.exception.EventBridgeErrorCode;
 import org.apache.rocketmq.eventbridge.domain.model.AbstractResourceService;
 import org.apache.rocketmq.eventbridge.domain.model.PaginationResult;
@@ -98,6 +102,16 @@ public class EventBusService extends AbstractResourceService {
         if (eventBusRepository.getEventBus(accountId, eventBusName) == null) {
             throw new EventBridgeException(EventBridgeErrorCode.EventBusNotExist, eventBusName);
         }
+    }
+
+    public Map<Integer, Pair<Long, Long>> fetchConsumeProcessInfo(String accountId, String eventBusName) {
+        Map<Integer, Pair<Long, Long>> consumerProcessInfo = new HashMap<>();
+        if (eventBusRepository.getEventBus(accountId, eventBusName) == null) {
+            return consumerProcessInfo;
+        } else {
+           consumerProcessInfo = eventDataRepository.fetchTopicStats(accountId, eventBusName);
+        }
+        return consumerProcessInfo;
     }
 
 }
