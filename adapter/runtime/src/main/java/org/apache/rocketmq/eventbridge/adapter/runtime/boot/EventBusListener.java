@@ -33,6 +33,8 @@ import org.apache.rocketmq.eventbridge.adapter.runtime.error.ErrorHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.rocketmq.eventbridge.BridgeMetricsConstant.COUNTER_MESSAGES_IN_TOTAL;
+
 /**
  * listen the event and offer to queue
  *
@@ -61,7 +63,7 @@ public class EventBusListener extends ServiceThread {
             List<ConnectRecord> pullRecordList = Lists.newArrayList();
             try {
                 pullRecordList = Optional.ofNullable(eventSubscriber.pull()).orElse(new ArrayList<>());
-                BridgeMetricsManager.messagesInTotal.add(pullRecordList.size());
+                metricsManager.countMetrics(COUNTER_MESSAGES_IN_TOTAL, EventBusListener.class.getSimpleName(), "event bus", pullRecordList.size());
                 if (CollectionUtils.isEmpty(pullRecordList)) {
                     this.waitForRunning(1000);
                     continue;
