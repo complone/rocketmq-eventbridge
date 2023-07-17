@@ -77,6 +77,11 @@ public class EventBusListener extends ServiceThread {
     }
 
     @Override
+    public void start() {
+        thread.start();
+    }
+
+    @Override
     public String getServiceName() {
         return EventBusListener.class.getSimpleName();
     }
