@@ -502,7 +502,6 @@ public final class Resource {
                 RequireResourceRequest.class, Builder.class);
       }
 
-      // Construct using com.antgroup.geaflow.rpc.proto.Resource.RequireResourceRequest.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -1359,7 +1358,6 @@ public final class Resource {
                 RequireResourceResponse.class, Builder.class);
       }
 
-      // Construct using com.antgroup.geaflow.rpc.proto.Resource.RequireResourceResponse.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
