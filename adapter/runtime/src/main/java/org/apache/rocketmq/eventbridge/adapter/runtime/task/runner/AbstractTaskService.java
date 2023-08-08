@@ -2,6 +2,7 @@ package org.apache.rocketmq.eventbridge.adapter.runtime.task.runner;
 
 import com.google.common.base.Preconditions;
 import org.apache.rocketmq.eventbridge.adapter.runtime.task.ITaskRunner;
+import org.apache.rocketmq.eventbridge.adapter.runtime.task.service.ITaskService;
 import org.apache.rocketmq.eventbridge.adapter.runtime.thread.Executors;
 import org.apache.rocketmq.eventbridge.adapter.runtime.utils.ExecutorUtil;
 import org.slf4j.Logger;

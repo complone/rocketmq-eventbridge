@@ -290,7 +290,6 @@ public final class Driver {
                 PipelineReq.class, Builder.class);
       }
 
-      // Construct using com.antgroup.geaflow.rpc.proto.Driver.PipelineReq.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -782,7 +781,6 @@ public final class Driver {
                 PipelineRes.class, Builder.class);
       }
 
-      // Construct using com.antgroup.geaflow.rpc.proto.Driver.PipelineRes.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -1019,8 +1017,8 @@ public final class Driver {
       "ipelineRes\022\017\n\007payload\030\001 \001(\0142}\n\rDriverSer" +
       "vice\0221\n\017executePipeline\022\014.PipelineReq\032\014." +
       "PipelineRes\"\0000\001\0229\n\005close\022\026.google.protob" +
-      "uf.Empty\032\026.google.protobuf.Empty\"\000B\"\n\036co" +
-      "m.antgroup.geaflow.rpc.protoP\000b\006proto3"
+      "uf.Empty\032\026.google.protobuf.Empty\"\000B\"\n\036org.apache." +
+      "rocketmq.eventbridge.adapter.runtime.boot.rpc.protoP\000b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

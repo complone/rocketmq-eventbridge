@@ -5,7 +5,7 @@ import org.apache.rocketmq.eventbridge.adapter.runtime.protocol.ICommand;
 import org.apache.rocketmq.eventbridge.adapter.runtime.protocol.IComposeEvent;
 import org.apache.rocketmq.eventbridge.adapter.runtime.protocol.IEvent;
 import org.apache.rocketmq.eventbridge.adapter.runtime.task.AbstractTaskRunner;
-import org.apache.rocketmq.eventbridge.adapter.runtime.task.runner.TaskService;
+import org.apache.rocketmq.eventbridge.adapter.runtime.task.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.apache.rocketmq.eventbridge.adapter.runtime.task.runner;
+package org.apache.rocketmq.eventbridge.adapter.runtime.task.service;
 
 public interface ITaskService<TASK> {
 
