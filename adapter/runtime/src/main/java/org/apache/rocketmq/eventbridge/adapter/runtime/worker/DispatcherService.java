@@ -6,7 +6,7 @@ import org.apache.rocketmq.eventbridge.adapter.runtime.task.runner.AbstractTaskS
 
 public class DispatcherService extends AbstractTaskService<ICommand, Dispatcher> {
 
-    private static final String MESSAGE_FORMAT = "geaflow-message-%d";
+    private static final String MESSAGE_FORMAT = "bridge-message-%d";
 
     private Dispatcher dispatcher;
 

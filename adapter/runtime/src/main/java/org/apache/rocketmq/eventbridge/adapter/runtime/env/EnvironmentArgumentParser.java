@@ -16,7 +16,7 @@ public class EnvironmentArgumentParser implements IEnvironmentArgsParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(EnvironmentArgumentParser.class);
 
     private static final String CLUSTER_ARGS = "cluster";
-    private static final String GEAFLOW_PREFIX = "bridge";
+    private static final String BRIDGE_PREFIX = "bridge";
 
 
     @Override
@@ -63,7 +63,7 @@ public class EnvironmentArgumentParser implements IEnvironmentArgsParser {
         for (Map.Entry<String, String> entry : tmp.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (key.startsWith(GEAFLOW_PREFIX)) {
+            if (key.startsWith(BRIDGE_PREFIX)) {
                 finalSystemArgs.put(key, value);
             } else {
                 LOGGER.warn("ignore nonstandard system config: {} {}", key, value);

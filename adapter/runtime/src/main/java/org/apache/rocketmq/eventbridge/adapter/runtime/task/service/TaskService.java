@@ -1,5 +1,6 @@
 package org.apache.rocketmq.eventbridge.adapter.runtime.task.service;
 
+import org.apache.rocketmq.eventbridge.adapter.runtime.env.config.Configuration;
 import org.apache.rocketmq.eventbridge.adapter.runtime.protocol.ICommand;
 import org.apache.rocketmq.eventbridge.adapter.runtime.task.runner.AbstractTaskService;
 import org.apache.rocketmq.eventbridge.adapter.runtime.task.runner.TaskRunner;
@@ -12,7 +13,11 @@ public class TaskService extends AbstractTaskService<ICommand, TaskRunner> {
 
     private static final String WORKER_FORMAT = "bridge-worker-%d";
 
-    public TaskService(String threadFormat) {
+    private int containerId;
+
+    private int taskNum;
+
+    public TaskService(int containerId, int taskNum, Configuration configuration, String threadFormat) {
         super(threadFormat);
     }
 
