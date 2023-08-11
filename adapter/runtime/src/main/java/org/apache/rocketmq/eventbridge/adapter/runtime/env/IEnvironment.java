@@ -12,12 +12,12 @@ public interface IEnvironment extends Serializable {
     void init();
 
     /**
-     * Submit pipeline by geaflow client.
+     * Submit pipeline by bridge client.
      */
     IPipelineResult submit();
 
     /**
-     * Shutdown geaflow client.
+     * Shutdown bridge client.
      */
     void shutdown();
 
